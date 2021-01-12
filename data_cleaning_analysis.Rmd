@@ -1,0 +1,88 @@
+---
+title: "Data Cleaning and Analysis"
+author: "Jan Sodoge"
+date: "1/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Import the data
+```{r}
+data <- read.csv("corona_article_data_zeit.csv")
+```
+
+
+
+
+Clean
+```{r}
+data_cleaned <- data %>% 
+                filter(str_length(date) > 6) %>% 
+                filter(grepl("2020", date)) %>% 
+                mutate(day_date = as.Date(str_extract(date, "2020-[0-9]{1,2}-[0-9]{1,2}")))%>% 
+                
+                select(-c(headline, date, url, X)) %>% 
+                
+                       
+                pivot_longer(!day_date, names_to = "priority", values_to = "keyword") %>% 
+                drop_na() %>% 
+                mutate(priority = str_extract(priority, "[1-9]{1,2}")) %>% 
+                filter(as.numeric(priority) < 10) %>% 
+                mutate(weight_keyword = 11- as.numeric(priority))
+
+
+```
+
+
+
+```{r}
+data_cleaned %>% 
+             
+             count(keyword, wt = weight_keyword) %>% 
+
+             arrange(desc(n)) %>% 
+             head(10)
+```
+
+
+Some small investigations
+```{r}
+relevancy_index <- data_cleaned %>% 
+             
+             count(keyword, day_date, wt = weight_keyword) %>% 
+
+             arrange(desc(n))
+```
+
+
+
+
+```{r}
+relevancy_index_viz <- dplyr::filter(relevancy_index, keyword == "Wirtschaftskrise")
+ggplot(data = relevancy_index_viz, aes(x = day_date, y = n))+
+  geom_line()
+```
+
+
+
+
+Let's get the viz with values per month
+```{r}
+relevancy_index_monthly <- data_cleaned %>% 
+  mutate(month = as.numeric(gsub(pattern = "-",replacement = "", x = str_extract(day_date, "-[0-9]{1,2}-")))) %>% 
+   count(keyword, month, wt = weight_keyword)
+  
+
+```
+
+```{r}
+relevancy_index_viz <- dplyr::filter(relevancy_index_monthly, keyword == "Wirtschaftskrise")
+ggplot(data = relevancy_index_viz, aes(x = month, y = n))+
+  geom_bar(stat = "identity")
+```
+

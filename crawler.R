@@ -58,15 +58,17 @@ xml_data <- xmlToList(page)
 
 
 keywords <- as.vector(list.unzip(xml_data$head$rankedTags)$text)
-headline <-   xml_data$head$image$.attrs[3]
-publication_date <- xml_data$head$image$.attrs[4]
+#headline <-   xml_data$head$image$.attrs[3]
+try(publication_date <- xml_data$head[18]$attribute$text)
+try(channel <- xml_data$head[13]$attribute$text)
+print(publication_date)
 
 
 
 
 
 article_data_frame <-  as.data.frame(t(keywords))
-article_data_frame$headline <- headline
+article_data_frame$headline <- channel
 article_data_frame$date <-   publication_date
 article_data_frame$url <- url_collected[index]
 
